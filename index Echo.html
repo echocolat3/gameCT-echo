@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Berpikir Komputasional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            overflow-x: hidden;
+        }
+        
+        .hero-title {
+            font-weight: 800;
+            background: linear-gradient(45deg, #FF5E7E, #FF9671, #FFC75F, #6BD5E1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.1);
+        }
+        
+        .card {
+            transition: all 0.4s ease;
+            transform: translateY(50px);
+            opacity: 0;
+            animation: fadeUp 0.8s forwards;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+        
+        .card-blue {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            animation-delay: 0.1s;
+        }
+        
+        .card-orange {
+            background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%);
+            animation-delay: 0.3s;
+        }
+        
+        .card-green {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            animation-delay: 0.5s;
+        }
+        
+        .card-red {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            animation-delay: 0.7s;
+        }
+        
+        .icon-container {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover .icon-container {
+            transform: rotate(10deg) scale(1.1);
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .decoration {
+            position: absolute;
+            opacity: 0.5;
+            z-index: -1;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+        
+        .decoration:nth-child(odd) {
+            animation-delay: 1s;
+        }
+        
+        .decoration:nth-child(even) {
+            animation-delay: 2s;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8 relative">
+    <!-- Decorative Elements -->
+    <svg class="decoration top-10 left-10 w-24 h-24 md:w-32 md:h-32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z" stroke="#6366F1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="#6366F1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    
+    <svg class="decoration top-20 right-20 w-16 h-16 md:w-24 md:h-24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="#FF9671" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    
+    <svg class="decoration bottom-10 left-1/4 w-20 h-20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 16V8C20.9996 7.64927 20.9071 7.30481 20.7315 7.00116C20.556 6.69751 20.3037 6.44536 20 6.27L13 2.27C12.696 2.09446 12.3511 2.00205 12 2.00205C11.6489 2.00205 11.304 2.09446 11 2.27L4 6.27C3.69626 6.44536 3.44398 6.69751 3.26846 7.00116C3.09294 7.30481 3.00036 7.64927 3 8V16C3.00036 16.3507 3.09294 16.6952 3.26846 16.9988C3.44398 17.3025 3.69626 17.5546 4 17.73L11 21.73C11.304 21.9055 11.6489 21.9979 12 21.9979C12.3511 21.9979 12.696 21.9055 13 21.73L20 17.73C20.3037 17.5546 20.556 17.3025 20.7315 16.9988C20.9071 16.6952 20.9996 16.3507 21 16Z" stroke="#43E97B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3.27 6.96L12 12.01L20.73 6.96" stroke="#43E97B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 22.08V12" stroke="#43E97B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    
+    <svg class="decoration bottom-20 right-1/4 w-24 h-24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999" stroke="#F5576C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M22 4L12 14.01L9 11.01" stroke="#F5576C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+    <header class="text-center mb-8 md:mb-12">
+        <h1 class="hero-title text-4xl md:text-6xl mb-4 pulse">Pilih Materi Game Berpikir Komputasional</h1>
+        <p class="text-gray-700 text-lg md:text-xl max-w-2xl mx-auto">Belajar konsep pemrograman dengan cara yang menyenangkan! Pilih salah satu materi di bawah ini untuk memulai petualanganmu.</p>
+    </header>
+
+    <main class="w-full max-w-6xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 px-4">
+            <!-- Dekomposisi Card -->
+            <a href="dekomposisi.html" class="card card-blue text-white p-6 flex flex-col items-center text-center">
+                <div class="icon-container">
+                    <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 20H8V16H4V20ZM4 14H8V10H4V14ZM4 8H8V4H4V8ZM10 20H14V16H10V20ZM10 14H14V10H10V14ZM10 8H14V4H10V8ZM16 20H20V16H16V20ZM16 14H20V10H16V14ZM16 8H20V4H16V8Z" fill="white"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Dekomposisi</h2>
+                <p class="mb-4">Belajar memecah masalah besar menjadi bagian-bagian kecil yang lebih mudah diselesaikan.</p>
+                <div class="mt-auto bg-white bg-opacity-20 py-2 px-4 rounded-full font-bold">
+                    Mulai Belajar →
+                </div>
+            </a>
+
+            <!-- Pengenalan Pola Card -->
+            <a href="pengenalan_pola.html" class="card card-orange text-white p-6 flex flex-col items-center text-center">
+                <div class="icon-container">
+                    <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22 12H18L15 21L9 3L6 12H2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Pengenalan Pola</h2>
+                <p class="mb-4">Temukan pola dan kemiripan dalam masalah untuk membantu menyelesaikannya dengan lebih efisien.</p>
+                <div class="mt-auto bg-white bg-opacity-20 py-2 px-4 rounded-full font-bold">
+                    Mulai Belajar →
+                </div>
+            </a>
+
+            <!-- Abstraksi Card -->
+            <a href="abstraksi.html" class="card card-green text-white p-6 flex flex-col items-center text-center">
+                <div class="icon-container">
+                    <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Abstraksi</h2>
+                <p class="mb-4">Pelajari cara menyederhanakan masalah dengan fokus pada informasi penting saja.</p>
+                <div class="mt-auto bg-white bg-opacity-20 py-2 px-4 rounded-full font-bold">
+                    Mulai Belajar →
+                </div>
+            </a>
+
+            <!-- Algoritma Card -->
+            <a href="algoritma.html" class="card card-red text-white p-6 flex flex-col items-center text-center">
+                <div class="icon-container">
+                    <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 6H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M8 12H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M8 18H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 6H3.01" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 12H3.01" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 18H3.01" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Algoritma</h2>
+                <p class="mb-4">Buat langkah-langkah yang jelas untuk menyelesaikan masalah secara sistematis.</p>
+                <div class="mt-auto bg-white bg-opacity-20 py-2 px-4 rounded-full font-bold">
+                    Mulai Belajar →
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <footer class="mt-12 md:mt-16 text-center text-gray-600">
+        <p>© 2025 SMP Nasional KPS (Eko Putranto Romadhan,S.Kom) | Have Fun with Computational Thinking</p>
+    </footer>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'966549f65296f7a6',t:'MTc1MzcxNTI3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
