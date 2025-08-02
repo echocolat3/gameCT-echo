@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Dekomposisi - Grid Warna</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            overflow-x: hidden;
+        }
+        
+        .grid-cell {
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .grid-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        
+        .grid-cell::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%);
+            pointer-events: none;
+        }
+        
+        .color-option {
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .color-option:hover {
+            transform: scale(1.15);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .color-option.selected {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 3px #fff, 0 0 0 6px #4f46e5, 0 8px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .color-option::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%);
+            pointer-events: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(79, 70, 229, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(249, 115, 22, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(249, 115, 22, 0.4);
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            border-radius: 50%;
+            animation: fall 3s ease-in infinite;
+            z-index: 100;
+        }
+        
+        @keyframes fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        
+        @media (max-width: 640px) {
+            .pattern-grid, .player-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 4px;
+            }
+        }
+        
+        .level-badge {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .level-badge::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                transparent, 
+                rgba(255, 255, 255, 0.4), 
+                transparent 30%
+            );
+            animation: rotate 4s linear infinite;
+        }
+        
+        @keyframes rotate {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .level-icon {
+            display: inline-flex;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        
+        .score-increase {
+            animation: scoreUp 1s ease-out;
+            position: absolute;
+            color: #10b981;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        
+        @keyframes scoreUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+        
+        .level-up-animation {
+            animation: levelUp 1.5s ease-out;
+        }
+        
+        @keyframes levelUp {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.5);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .cell-correct {
+            animation: correctPulse 0.5s ease-in-out;
+        }
+        
+        @keyframes correctPulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+                box-shadow: 0 0 15px rgba(16, 185, 129, 0.7);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .cell-incorrect {
+            animation: incorrectShake 0.5s ease-in-out;
+        }
+        
+        @keyframes incorrectShake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            20%, 60% {
+                transform: translateX(-5px);
+            }
+            40%, 80% {
+                transform: translateX(5px);
+            }
+        }
+        
+        .modal-enter {
+            animation: modalEnter 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        
+        @keyframes modalEnter {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .game-container {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .star-icon {
+            display: inline-block;
+            color: #fbbf24;
+            animation: starPulse 2s infinite;
+        }
+        
+        @keyframes starPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+        
+        .level-progress {
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .level-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #8b5cf6);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .symbol-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        .level-up-text {
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.7), 
+                         0 0 20px rgba(0, 0, 0, 0.5),
+                         0 0 30px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 15px;
+        }
+        
+        .level-badge-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .level-badge-pulse {
+            animation: badgePulse 2s infinite;
+        }
+        
+        @keyframes badgePulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+            }
+        }
+        
+        .difficulty-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 px-6 shadow-lg">
+            <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <i class="fas fa-puzzle-piece text-2xl md:text-3xl mr-3 animate-bounce"></i>
+                    <h1 class="text-2xl md:text-3xl font-bold">Game Dekomposisi</h1>
+                </div>
+                <div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+                    <div class="level-badge-container">
+                        <div class="level-badge bg-white text-indigo-700 px-4 py-2 rounded-full font-semibold shadow-md flex items-center level-badge-pulse">
+                            <span class="level-icon">
+                                <i class="fas fa-trophy"></i>
+                            </span>
+                            Level: <span id="level-display" class="ml-1">1</span>
+                        </div>
+                        <div class="difficulty-badge" id="difficulty-badge">1</div>
+                    </div>
+                    <div class="relative">
+                        <div class="bg-white text-indigo-700 px-4 py-2 rounded-full font-semibold shadow-md flex items-center">
+                            <span class="level-icon">
+                                <i class="fas fa-star"></i>
+                            </span>
+                            Skor: <span id="score-display" class="ml-1">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container mx-auto mt-3">
+                <div class="level-progress">
+                    <div id="level-progress-bar" class="level-progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow container mx-auto px-4 py-8">
+            <!-- Game Instructions -->
+            <div class="game-container rounded-lg shadow-lg p-6 mb-8">
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-info-circle text-indigo-600 text-xl mr-2"></i>
+                    <h2 class="text-xl font-bold text-gray-800">Petunjuk Permainan:</h2>
+                </div>
+                <p class="text-gray-700">Cocokkan pola warna pada grid sesuai dengan pola yang ditampilkan. Pilih warna dari palet warna di bawah, lalu klik pada kotak grid untuk mewarnainya.</p>
+            </div>
+
+            <!-- Game Area -->
+            <div class="game-container rounded-lg shadow-lg p-6">
+                <!-- Pattern and Player Grids -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <!-- Pattern Grid -->
+                    <div class="flex flex-col items-center">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+                            <i class="fas fa-bullseye text-indigo-600 mr-2"></i>
+                            Pola Target:
+                        </h3>
+                        <div id="pattern-grid" class="pattern-grid w-full max-w-xs">
+                            <!-- Pattern grid will be generated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Player Grid -->
+                    <div class="flex flex-col items-center">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+                            <i class="fas fa-paint-brush text-indigo-600 mr-2"></i>
+                            Grid Kamu:
+                        </h3>
+                        <div id="player-grid" class="player-grid w-full max-w-xs">
+                            <!-- Player grid will be generated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Color Palette -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 text-center flex items-center justify-center">
+                        <i class="fas fa-palette text-indigo-600 mr-2"></i>
+                        Pilih Warna:
+                    </h3>
+                    <div id="color-palette" class="flex flex-wrap justify-center gap-4">
+                        <!-- Color options will be generated here -->
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex justify-center space-x-4">
+                    <button id="check-btn" class="btn-primary px-6 py-3 rounded-lg font-semibold shadow-md flex items-center">
+                        <i class="fas fa-check mr-2"></i>
+                        Periksa
+                    </button>
+                    <button id="reset-btn" class="btn-secondary px-6 py-3 rounded-lg font-semibold shadow-md flex items-center">
+                        <i class="fas fa-redo mr-2"></i>
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal for feedback -->
+        <div id="feedback-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg shadow-xl p-8 max-w-md mx-4 modal-enter">
+                <div id="modal-content" class="text-center">
+                    <!-- Content will be dynamically inserted -->
+                </div>
+                <div class="mt-6 flex justify-center">
+                    <button id="modal-close" class="btn-primary px-6 py-2 rounded-lg font-semibold flex items-center">
+                        <i class="fas fa-arrow-right mr-2"></i>
+                        Lanjutkan
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Level Up Animation -->
+        <div id="level-up-container" class="fixed inset-0 flex items-center justify-center pointer-events-none z-50 hidden">
+            <div class="text-center">
+                <div class="text-5xl font-bold level-up-text mb-4 level-up-animation">
+                    <i class="fas fa-level-up-alt mr-2"></i>
+                    LEVEL UP!
+                </div>
+                <div class="text-3xl font-bold level-up-text">
+                    Level <span id="new-level">2</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game state
+            let gameState = {
+                level: 1,
+                score: 0,
+                selectedColor: null,
+                patternGrid: [],
+                playerGrid: [],
+                gridSize: 5, // 5x5 grid (increased from 4x4)
+                colors: [
+                    '#FF5252', // Red
+                    '#4CAF50', // Green
+                    '#2196F3', // Blue
+                    '#FFEB3B', // Yellow
+                    '#9C27B0', // Purple
+                    '#FF9800', // Orange
+                    '#00BCD4', // Cyan
+                    '#795548', // Brown
+                    '#607D8B', // Blue Grey
+                    '#E91E63', // Pink
+                    '#3F51B5', // Indigo
+                    '#009688', // Teal
+                    '#FF4081', // Pink Accent
+                    '#FFC107', // Amber
+                    '#8BC34A'  // Light Green
+                ],
+                symbols: [
+                    '★', '♦', '♥', '♣', '♠', '●', '◆', '■', '▲', '◀', '▶', '▼', '◉', '◈', '◇', '◎', '○', '◌', '◍', '◐',
+                    '✦', '✧', '✩', '✪', '✫', '✬', '✭', '✮', '✯', '✰', '✱', '✲', '✳', '✴', '✵', '✶', '✷', '✸', '✹', '✺'
+                ],
+                levelThresholds: [30, 70, 120, 180, 250], // Points needed for each level
+                maxLevel: 5,
+                difficultyLabels: ['1', '2', '3', '4', '5']
+            };
+
+            // DOM elements
+            const patternGridContainer = document.getElementById('pattern-grid');
+            const playerGridContainer = document.getElementById('player-grid');
+            const colorPalette = document.getElementById('color-palette');
+            const checkButton = document.getElementById('check-btn');
+            const resetButton = document.getElementById('reset-btn');
+            const levelDisplay = document.getElementById('level-display');
+            const scoreDisplay = document.getElementById('score-display');
+            const feedbackModal = document.getElementById('feedback-modal');
+            const modalContent = document.getElementById('modal-content');
+            const modalClose = document.getElementById('modal-close');
+            const levelUpContainer = document.getElementById('level-up-container');
+            const newLevelDisplay = document.getElementById('new-level');
+            const levelProgressBar = document.getElementById('level-progress-bar');
+            const difficultyBadge = document.getElementById('difficulty-badge');
+
+            // Initialize game
+            initGame();
+
+            // Event listeners
+            checkButton.addEventListener('click', checkAnswer);
+            resetButton.addEventListener('click', resetGame);
+            modalClose.addEventListener('click', closeModal);
+
+            // Functions
+            function initGame() {
+                // Set level and score display
+                levelDisplay.textContent = gameState.level;
+                scoreDisplay.textContent = gameState.score;
+                difficultyBadge.textContent = gameState.difficultyLabels[gameState.level - 1];
+                updateProgressBar();
+
+                // Generate pattern grid
+                generatePatternGrid();
+
+                // Generate player grid
+                generatePlayerGrid();
+
+                // Generate color palette
+                generateColorPalette();
+            }
+
+            function generatePatternGrid() {
+                patternGridContainer.innerHTML = '';
+                gameState.patternGrid = [];
+
+                // Determine number of colors to use based on level
+                const numColors = Math.min(3 + gameState.level, gameState.colors.length);
+                const availableColors = gameState.colors.slice(0, numColors);
+
+                // Create grid cells
+                for (let i = 0; i < gameState.gridSize; i++) {
+                    gameState.patternGrid[i] = [];
+                    for (let j = 0; j < gameState.gridSize; j++) {
+                        // Randomly select a color
+                        const colorIndex = Math.floor(Math.random() * availableColors.length);
+                        const color = availableColors[colorIndex];
+                        gameState.patternGrid[i][j] = color;
+
+                        // Create cell element
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.style.backgroundColor = color;
+                        cell.style.width = '100%';
+                        cell.style.paddingBottom = '100%'; // Make it square
+                        cell.style.borderRadius = '8px';
+                        cell.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                        
+                        // Add symbol overlay based on level
+                        if (gameState.level >= 3) {
+                            const symbolOverlay = document.createElement('div');
+                            symbolOverlay.className = 'symbol-overlay';
+                            const symbolIndex = Math.floor(Math.random() * gameState.symbols.length);
+                            symbolOverlay.textContent = gameState.symbols[symbolIndex];
+                            cell.appendChild(symbolOverlay);
+                            cell.dataset.symbol = gameState.symbols[symbolIndex];
+                        }
+                        
+                        patternGridContainer.appendChild(cell);
+                    }
+                }
+            }
+
+            function generatePlayerGrid() {
+                playerGridContainer.innerHTML = '';
+                gameState.playerGrid = [];
+
+                // Create grid cells
+                for (let i = 0; i < gameState.gridSize; i++) {
+                    gameState.playerGrid[i] = [];
+                    for (let j = 0; j < gameState.gridSize; j++) {
+                        gameState.playerGrid[i][j] = null;
+
+                        // Create cell element
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.style.backgroundColor = '#E5E7EB'; // Default light gray
+                        cell.style.width = '100%';
+                        cell.style.paddingBottom = '100%'; // Make it square
+                        cell.style.borderRadius = '8px';
+                        cell.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        
+                        // Add click event
+                        cell.addEventListener('click', handleCellClick);
+                        
+                        playerGridContainer.appendChild(cell);
+                    }
+                }
+            }
+
+            function generateColorPalette() {
+                colorPalette.innerHTML = '';
+
+                // Determine number of colors to use based on level
+                const numColors = Math.min(3 + gameState.level, gameState.colors.length);
+                
+                // Create color options
+                for (let i = 0; i < numColors; i++) {
+                    const color = gameState.colors[i];
+                    
+                    const colorOption = document.createElement('div');
+                    colorOption.className = 'color-option';
+                    colorOption.style.backgroundColor = color;
+                    colorOption.style.width = '50px';
+                    colorOption.style.height = '50px';
+                    colorOption.style.borderRadius = '50%';
+                    colorOption.dataset.color = color;
+                    
+                    // Add click event
+                    colorOption.addEventListener('click', handleColorSelect);
+                    
+                    colorPalette.appendChild(colorOption);
+                }
+            }
+
+            function handleColorSelect() {
+                // Remove selected class from all color options
+                document.querySelectorAll('.color-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+                
+                // Add selected class to clicked option
+                this.classList.add('selected');
+                
+                // Update selected color
+                gameState.selectedColor = this.dataset.color;
+                
+                // Add a subtle animation
+                this.animate([
+                    { transform: 'scale(1.2)' },
+                    { transform: 'scale(1.15)' }
+                ], {
+                    duration: 300,
+                    easing: 'cubic-bezier(0.68, -0.55, 0.27, 1.55)'
+                });
+            }
+
+            function handleCellClick() {
+                // Check if a color is selected
+                if (!gameState.selectedColor) {
+                    // Shake the color palette to indicate user needs to select a color
+                    colorPalette.animate([
+                        { transform: 'translateX(-5px)' },
+                        { transform: 'translateX(5px)' },
+                        { transform: 'translateX(-5px)' },
+                        { transform: 'translateX(0)' }
+                    ], {
+                        duration: 300,
+                        easing: 'ease-in-out'
+                    });
+                    return;
+                }
+                
+                const row = parseInt(this.dataset.row);
+                const col = parseInt(this.dataset.col);
+                
+                // Update player grid state
+                gameState.playerGrid[row][col] = gameState.selectedColor;
+                
+                // Update cell color with animation
+                const originalColor = this.style.backgroundColor;
+                this.animate([
+                    { backgroundColor: originalColor },
+                    { backgroundColor: gameState.selectedColor }
+                ], {
+                    duration: 300,
+                    easing: 'ease-out',
+                    fill: 'forwards'
+                });
+                
+                this.style.backgroundColor = gameState.selectedColor;
+                
+                // Add symbol if level is 3 or higher
+                if (gameState.level >= 3) {
+                    // Remove existing symbol if any
+                    const existingSymbol = this.querySelector('.symbol-overlay');
+                    if (existingSymbol) {
+                        this.removeChild(existingSymbol);
+                    }
+                    
+                    // Get the corresponding pattern cell
+                    const patternCells = patternGridContainer.querySelectorAll('.grid-cell');
+                    const patternCellIndex = row * gameState.gridSize + col;
+                    const patternCell = patternCells[patternCellIndex];
+                    
+                    if (patternCell && patternCell.dataset.symbol) {
+                        const symbolOverlay = document.createElement('div');
+                        symbolOverlay.className = 'symbol-overlay';
+                        symbolOverlay.textContent = patternCell.dataset.symbol;
+                        this.appendChild(symbolOverlay);
+                    }
+                }
+            }
+
+            function checkAnswer() {
+                // Check if all cells are filled
+                let allFilled = true;
+                for (let i = 0; i < gameState.gridSize; i++) {
+                    for (let j = 0; j < gameState.gridSize; j++) {
+                        if (gameState.playerGrid[i][j] === null) {
+                            allFilled = false;
+                            break;
+                        }
+                    }
+                    if (!allFilled) break;
+                }
+                
+                if (!allFilled) {
+                    showFeedback(false, 'Isi semua kotak grid terlebih dahulu!');
+                    return;
+                }
+                
+                // Check if pattern matches
+                let isCorrect = true;
+                let incorrectCells = [];
+                
+                for (let i = 0; i < gameState.gridSize; i++) {
+                    for (let j = 0; j < gameState.gridSize; j++) {
+                        if (gameState.playerGrid[i][j] !== gameState.patternGrid[i][j]) {
+                            isCorrect = false;
+                            incorrectCells.push({row: i, col: j});
+                        }
+                    }
+                }
+                
+                if (isCorrect) {
+                    // Calculate points based on level
+                    const pointsEarned = gameState.level * 10;
+                    
+                    // Update score with animation
+                    const oldScore = gameState.score;
+                    gameState.score += pointsEarned;
+                    animateScoreIncrease(pointsEarned);
+                    scoreDisplay.textContent = gameState.score;
+                    
+                    // Check if level up
+                    const oldLevel = gameState.level;
+                    if (gameState.level < gameState.maxLevel && 
+                        gameState.score >= gameState.levelThresholds[gameState.level - 1]) {
+                        gameState.level++;
+                        difficultyBadge.textContent = gameState.difficultyLabels[gameState.level - 1];
+                        showLevelUpAnimation();
+                    }
+                    
+                    // Update progress bar
+                    updateProgressBar();
+                    
+                    // Show success message
+                    showFeedback(true, `Selamat! Kamu berhasil mencocokkan pola dengan benar dan mendapatkan ${pointsEarned} poin.`);
+                    
+                    // Animate correct cells
+                    animateCorrectCells();
+                    
+                    // Create confetti effect
+                    createConfetti();
+                    
+                    // Reset for next round after a delay
+                    setTimeout(() => {
+                        resetGame();
+                    }, 1000);
+                } else {
+                    // Show error message
+                    showFeedback(false, 'Pola belum cocok. Coba periksa kembali warna-warna yang kamu pilih.');
+                    
+                    // Animate incorrect cells
+                    animateIncorrectCells(incorrectCells);
+                }
+            }
+
+            function resetGame() {
+                // Reset player grid
+                const playerCells = playerGridContainer.querySelectorAll('.grid-cell');
+                playerCells.forEach(cell => {
+                    const originalColor = cell.style.backgroundColor;
+                    cell.animate([
+                        { backgroundColor: originalColor },
+                        { backgroundColor: '#E5E7EB' }
+                    ], {
+                        duration: 300,
+                        easing: 'ease-out',
+                        fill: 'forwards'
+                    });
+                    
+                    cell.style.backgroundColor = '#E5E7EB';
+                    
+                    // Remove symbol if any
+                    const symbolOverlay = cell.querySelector('.symbol-overlay');
+                    if (symbolOverlay) {
+                        cell.removeChild(symbolOverlay);
+                    }
+                    
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+                    gameState.playerGrid[row][col] = null;
+                });
+                
+                // Reset selected color
+                gameState.selectedColor = null;
+                document.querySelectorAll('.color-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+                
+                // Generate new pattern
+                generatePatternGrid();
+                
+                // Update color palette if level changed
+                generateColorPalette();
+            }
+
+            function showFeedback(isCorrect, message) {
+                modalContent.innerHTML = '';
+                
+                if (isCorrect) {
+                    const title = document.createElement('h3');
+                    title.className = 'text-3xl font-bold text-green-600 mb-4 flex items-center justify-center';
+                    title.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Benar!';
+                    
+                    const messageElem = document.createElement('p');
+                    messageElem.className = 'text-gray-700 text-lg';
+                    messageElem.textContent = message;
+                    
+                    // Add stars based on level
+                    const starsContainer = document.createElement('div');
+                    starsContainer.className = 'flex justify-center my-4';
+                    
+                    for (let i = 0; i < gameState.level; i++) {
+                        const star = document.createElement('span');
+                        star.className = 'star-icon text-3xl mx-1';
+                        star.innerHTML = '<i class="fas fa-star"></i>';
+                        starsContainer.appendChild(star);
+                    }
+                    
+                    modalContent.appendChild(title);
+                    modalContent.appendChild(messageElem);
+                    modalContent.appendChild(starsContainer);
+                } else {
+                    const title = document.createElement('h3');
+                    title.className = 'text-3xl font-bold text-red-600 mb-4 flex items-center justify-center';
+                    title.innerHTML = '<i class="fas fa-times-circle mr-2"></i> Belum Tepat';
+                    
+                    const messageElem = document.createElement('p');
+                    messageElem.className = 'text-gray-700 text-lg';
+                    messageElem.textContent = message;
+                    
+                    modalContent.appendChild(title);
+                    modalContent.appendChild(messageElem);
+                }
+                
+                feedbackModal.classList.remove('hidden');
+            }
+
+            function closeModal() {
+                feedbackModal.classList.add('hidden');
+            }
+
+            function createConfetti() {
+                const confettiCount = 100;
+                const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#ff5252', '#4caf50', '#2196f3', '#ffeb3b', '#9c27b0', '#ff9800'];
+                
+                for (let i = 0; i < confettiCount; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.width = Math.random() * 10 + 5 + 'px';
+                    confetti.style.height = Math.random() * 10 + 5 + 'px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    
+                    // Random shapes
+                    if (Math.random() > 0.5) {
+                        confetti.style.borderRadius = '50%';
+                    } else if (Math.random() > 0.5) {
+                        confetti.style.borderRadius = '0';
+                    } else {
+                        confetti.style.borderRadius = '0 50% 0 50%';
+                        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    }
+                    
+                    document.body.appendChild(confetti);
+                    
+                    // Remove confetti after animation
+                    setTimeout(() => {
+                        if (document.body.contains(confetti)) {
+                            document.body.removeChild(confetti);
+                        }
+                    }, 5000);
+                }
+            }
+
+            function animateScoreIncrease(points) {
+                const scoreElement = document.getElementById('score-display');
+                const rect = scoreElement.getBoundingClientRect();
+                
+                const scoreIncrease = document.createElement('div');
+                scoreIncrease.className = 'score-increase';
+                scoreIncrease.textContent = `+${points}`;
+                scoreIncrease.style.left = `${rect.left + rect.width / 2}px`;
+                scoreIncrease.style.top = `${rect.top}px`;
+                
+                document.body.appendChild(scoreIncrease);
+                
+                setTimeout(() => {
+                    document.body.removeChild(scoreIncrease);
+                }, 1000);
+            }
+
+            function showLevelUpAnimation() {
+                levelDisplay.textContent = gameState.level;
+                newLevelDisplay.textContent = gameState.level;
+                
+                levelUpContainer.classList.remove('hidden');
+                
+                // Create special level up confetti
+                const confettiCount = 200;
+                const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#ff5252', '#4caf50', '#2196f3', '#ffeb3b', '#9c27b0', '#ff9800'];
+                
+                for (let i = 0; i < confettiCount; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.width = Math.random() * 15 + 5 + 'px';
+                    confetti.style.height = Math.random() * 15 + 5 + 'px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDuration = (Math.random() * 4 + 2) + 's';
+                    
+                    // Random shapes
+                    if (Math.random() > 0.6) {
+                        confetti.style.borderRadius = '50%';
+                    } else if (Math.random() > 0.6) {
+                        confetti.style.borderRadius = '0';
+                    } else {
+                        confetti.style.borderRadius = '0 50% 0 50%';
+                        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    }
+                    
+                    document.body.appendChild(confetti);
+                    
+                    // Remove confetti after animation
+                    setTimeout(() => {
+                        if (document.body.contains(confetti)) {
+                            document.body.removeChild(confetti);
+                        }
+                    }, 6000);
+                }
+                
+                setTimeout(() => {
+                    levelUpContainer.classList.add('hidden');
+                }, 3000);
+            }
+
+            function updateProgressBar() {
+                if (gameState.level >= gameState.maxLevel) {
+                    levelProgressBar.style.width = '100%';
+                    return;
+                }
+                
+                const currentThreshold = gameState.levelThresholds[gameState.level - 1];
+                const previousThreshold = gameState.level > 1 ? gameState.levelThresholds[gameState.level - 2] : 0;
+                
+                const progress = ((gameState.score - previousThreshold) / (currentThreshold - previousThreshold)) * 100;
+                levelProgressBar.style.width = `${Math.min(progress, 100)}%`;
+            }
+
+            function animateCorrectCells() {
+                const playerCells = playerGridContainer.querySelectorAll('.grid-cell');
+                
+                playerCells.forEach((cell, index) => {
+                    setTimeout(() => {
+                        cell.classList.add('cell-correct');
+                        setTimeout(() => {
+                            cell.classList.remove('cell-correct');
+                        }, 500);
+                    }, index * 50);
+                });
+            }
+
+            function animateIncorrectCells(incorrectCells) {
+                const playerCells = playerGridContainer.querySelectorAll('.grid-cell');
+                
+                incorrectCells.forEach(cell => {
+                    const index = cell.row * gameState.gridSize + cell.col;
+                    const cellElement = playerCells[index];
+                    
+                    cellElement.classList.add('cell-incorrect');
+                    setTimeout(() => {
+                        cellElement.classList.remove('cell-incorrect');
+                    }, 500);
+                });
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96578778b5746cfe',t:'MTc1MzU3MDk5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Algoritma Sehari-hari</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0f9ff;
+            touch-action: manipulation;
+        }
+        
+        .draggable {
+            cursor: grab;
+            transition: all 0.3s ease;
+            animation: pop-in 0.5s;
+        }
+        
+        @keyframes pop-in {
+            0% { transform: scale(0.8); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .draggable:active {
+            cursor: grabbing;
+            transform: scale(1.02);
+        }
+        
+        .draggable.dragging {
+            opacity: 0.8;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+        }
+        
+        .drop-zone {
+            transition: all 0.3s ease;
+        }
+        
+        .drop-zone.highlight {
+            background-color: #e0f2fe !important;
+            transform: scale(1.03);
+        }
+        
+        .success-animation {
+            animation: success-pulse 1s ease-in-out;
+        }
+        
+        @keyframes success-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            border-radius: 50%;
+            animation: fall 3s ease-in-out forwards;
+        }
+        
+        @keyframes fall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        
+        .step-item {
+            transition: all 0.3s ease;
+        }
+        
+        .step-item.correct {
+            background-color: #d1fae5 !important;
+            border-color: #34d399 !important;
+            animation: correct-pulse 0.6s ease-in-out;
+        }
+        
+        @keyframes correct-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); box-shadow: 0 0 15px rgba(52, 211, 153, 0.5); }
+            100% { transform: scale(1); }
+        }
+        
+        .step-item.incorrect {
+            background-color: #fee2e2 !important;
+            border-color: #f87171 !important;
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .btn {
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .level-indicator {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .level-indicator::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            transform: translateX(-100%);
+            animation: slide-in 1s forwards;
+        }
+        
+        @keyframes slide-in {
+            to { transform: translateX(0); }
+        }
+        
+        .fade-in {
+            animation: fade-in 0.5s ease-in-out;
+        }
+        
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .slide-in {
+            animation: slide-in-right 0.5s ease-in-out;
+        }
+        
+        @keyframes slide-in-right {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .bounce {
+            animation: bounce 0.5s ease-in-out;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .ghost-element {
+            pointer-events: none;
+            position: fixed;
+            z-index: 1000;
+            opacity: 0.8;
+            transform: translate(-50%, -50%);
+            transition: box-shadow 0.2s;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .level-locked {
+            position: relative;
+            filter: grayscale(1);
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .level-locked::after {
+            content: '🔒';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            z-index: 10;
+        }
+        
+        .level-completed::after {
+            content: '✅';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5rem;
+            z-index: 10;
+        }
+        
+        .hint-pulse {
+            animation: hint-pulse 2s infinite;
+        }
+        
+        @keyframes hint-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container" class="max-w-4xl mx-auto p-4 md:p-6">
+        <!-- Splash Screen -->
+        <div id="splash-screen" class="flex flex-col items-center justify-center min-h-screen text-center">
+            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full">
+                <h1 class="text-3xl md:text-4xl font-bold text-blue-600 mb-4">Algoritma Sehari-hari</h1>
+                <p class="text-lg text-gray-700 mb-6">Game edukatif tentang berpikir komputasional untuk siswa SMP</p>
+                
+                <div class="flex justify-center space-x-4 mb-8">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                    </div>
+                </div>
+                
+                <p class="text-gray-600 mb-8">Susun langkah-langkah algoritma dari aktivitas sehari-hari dengan urutan yang benar!</p>
+                
+                <button id="start-button" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full text-lg">
+                    Mulai Bermain
+                </button>
+            </div>
+        </div>
+
+        <!-- Level Selection -->
+        <div id="level-selection" class="hidden min-h-screen flex flex-col">
+            <h1 class="text-3xl font-bold text-center text-blue-600 my-6">Pilih Level</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Level 1 -->
+                <div class="level-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer" data-level="1">
+                    <div class="bg-blue-500 h-3"></div>
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Level 1</h3>
+                                <p class="text-gray-600">Menyiram Tanaman</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500">6 langkah</div>
+                            <div class="text-blue-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Level 2 (Locked) -->
+                <div class="level-card level-locked bg-white rounded-xl shadow-lg overflow-hidden transition-shadow" data-level="2">
+                    <div class="bg-green-500 h-3"></div>
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Level 2</h3>
+                                <p class="text-gray-600">Memasak Indomie Goreng</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500">6 langkah</div>
+                            <div class="text-green-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Level 3 (Locked) -->
+                <div class="level-card level-locked bg-white rounded-xl shadow-lg overflow-hidden transition-shadow" data-level="3">
+                    <div class="bg-yellow-500 h-3"></div>
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Level 3</h3>
+                                <p class="text-gray-600">Membuat Kopi</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500">6 langkah</div>
+                            <div class="text-yellow-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Level 4 (Locked) -->
+                <div class="level-card level-locked bg-white rounded-xl shadow-lg overflow-hidden transition-shadow" data-level="4">
+                    <div class="bg-purple-500 h-3"></div>
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Level 4</h3>
+                                <p class="text-gray-600">Berangkat Sekolah</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500">6 langkah</div>
+                            <div class="text-purple-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Level 5 (Locked) -->
+                <div class="level-card level-locked bg-white rounded-xl shadow-lg overflow-hidden transition-shadow" data-level="5">
+                    <div class="bg-red-500 h-3"></div>
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Level 5</h3>
+                                <p class="text-gray-600">Menyalakan Komputer</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500">6 langkah</div>
+                            <div class="text-red-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden min-h-screen flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <button id="back-to-levels" class="btn flex items-center text-blue-600 font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Kembali
+                </button>
+                <div id="level-indicator" class="level-indicator px-4 py-1 bg-blue-100 text-blue-800 font-bold rounded-full">
+                    Level 1
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 fade-in">
+                <h2 id="level-title" class="text-2xl font-bold text-center mb-2">Menyiram Tanaman</h2>
+                <p class="text-gray-600 text-center mb-6">Susun langkah-langkah berikut dengan urutan yang benar</p>
+                
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Illustration -->
+                    <div class="md:w-1/3 flex justify-center">
+                        <div id="level-illustration" class="w-full max-w-[200px] bounce"></div>
+                    </div>
+                    
+                    <!-- Steps -->
+                    <div class="md:w-2/3">
+                        <div id="steps-container" class="space-y-3 mb-6">
+                            <!-- Steps will be inserted here -->
+                        </div>
+                        
+                        <div id="drop-container" class="space-y-3">
+                            <!-- Drop zones will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-center">
+                <button id="check-button" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full text-lg">
+                    Periksa Jawaban
+                </button>
+            </div>
+            
+            <div id="hint-container" class="mt-4 text-center">
+                <button id="hint-button" class="btn text-blue-600 font-semibold">
+                    <span class="flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        Petunjuk
+                    </span>
+                </button>
+                <div id="hint-text" class="hidden mt-2 p-3 bg-blue-50 text-blue-800 rounded-lg">
+                    Petunjuk akan muncul di sini
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Modal -->
+        <div id="result-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4 fade-in">
+                <div id="success-result" class="hidden">
+                    <div class="flex justify-center mb-6">
+                        <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center success-animation">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h2 class="text-3xl font-bold text-center text-green-600 mb-2">Kamu Berhasil!</h2>
+                    <p class="text-gray-600 text-center mb-6">Selamat! Kamu telah menyelesaikan level ini dengan benar.</p>
+                </div>
+                
+                <div id="failure-result" class="hidden">
+                    <div class="flex justify-center mb-6">
+                        <div class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h2 class="text-3xl font-bold text-center text-red-600 mb-2">Coba Lagi!</h2>
+                    <p class="text-gray-600 text-center mb-6">Urutan langkah-langkah belum tepat. Silakan coba lagi.</p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button id="try-again-button" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full">
+                        Coba Lagi
+                    </button>
+                    <button id="next-level-button" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full">
+                        Level Berikutnya
+                    </button>
+                    <button id="back-to-levels-button" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full">
+                        Pilih Level
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game data
+            const levels = [
+                {
+                    id: 1,
+                    title: "Menyiram Tanaman",
+                    color: "blue",
+                    steps: [
+                        { text: "Ambil alat penyiram", icon: "🚿" },
+                        { text: "Pergi ke sumber air", icon: "🚰" },
+                        { text: "Isi air hingga cukup", icon: "💧" },
+                        { text: "Bawa ke tanaman", icon: "🚶" },
+                        { text: "Siram tanaman di bagian akar", icon: "🌱" },
+                        { text: "Simpan kembali alat penyiram", icon: "🔄" }
+                    ],
+                    hint: "Pikirkan urutan logis: pertama ambil alat, lalu isi dengan air, kemudian gunakan, dan terakhir simpan kembali.",
+                    illustration: `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-full">
+                            <rect width="200" height="200" fill="#f0f9ff" rx="10" ry="10"/>
+                            <!-- Pot -->
+                            <rect x="70" y="130" width="60" height="50" fill="#e97451" rx="5" ry="5"/>
+                            <rect x="75" y="130" width="50" height="10" fill="#c45e3f"/>
+                            <!-- Plant -->
+                            <path d="M100,130 Q85,100 95,80 Q100,75 105,80 Q115,100 100,130" fill="#4ade80"/>
+                            <path d="M100,130 Q115,100 120,70 Q125,65 130,70 Q125,100 100,130" fill="#4ade80"/>
+                            <path d="M100,130 Q80,110 70,90 Q70,85 75,85 Q90,95 100,130" fill="#4ade80"/>
+                            <!-- Watering can -->
+                            <path d="M40,110 L60,110 L65,120 L35,120 Z" fill="#60a5fa"/>
+                            <path d="M45,110 L45,90 L55,90 L55,110 Z" fill="#60a5fa"/>
+                            <path d="M55,95 L70,85 L70,90 L55,100 Z" fill="#60a5fa"/>
+                            <!-- Water drops -->
+                            <circle cx="70" cy="95" r="2" fill="#3b82f6"/>
+                            <circle cx="75" cy="100" r="2" fill="#3b82f6"/>
+                            <circle cx="80" cy="105" r="2" fill="#3b82f6"/>
+                        </svg>
+                    `
+                },
+                {
+                    id: 2,
+                    title: "Memasak Indomie Goreng",
+                    color: "green",
+                    steps: [
+                        { text: "Tuangkan air ke dalam panci", icon: "💧" },
+                        { text: "Nyalakan kompor dan panaskan air", icon: "🔥" },
+                        { text: "Masukkan mie ke dalam air mendidih", icon: "🍜" },
+                        { text: "Tunggu mie hingga matang", icon: "⏱️" },
+                        { text: "Tiriskan mie dan buang airnya", icon: "🥄" },
+                        { text: "Campurkan bumbu dan aduk hingga rata", icon: "🧂" }
+                    ],
+                    hint: "Ingat urutan memasak: siapkan bahan, panaskan, masak, dan terakhir sajikan.",
+                    illustration: `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-full">
+                            <rect width="200" height="200" fill="#f0f9ff" rx="10" ry="10"/>
+                            <!-- Stove -->
+                            <rect x="50" y="120" width="100" height="30" fill="#374151" rx="5" ry="5"/>
+                            <circle cx="100" cy="135" r="15" fill="#4b5563"/>
+                            <circle cx="100" cy="135" r="12" fill="#ef4444"/>
+                            <!-- Pot -->
+                            <rect x="70" y="80" width="60" height="40" fill="#9ca3af"/>
+                            <rect x="65" y="80" width="70" height="10" fill="#6b7280"/>
+                            <!-- Pot handles -->
+                            <rect x="60" y="90" width="5" height="20" fill="#6b7280" rx="2" ry="2"/>
+                            <rect x="135" y="90" width="5" height="20" fill="#6b7280" rx="2" ry="2"/>
+                            <!-- Noodles -->
+                            <path d="M80,95 C85,90 95,100 100,95 C105,90 115,100 120,95" stroke="#fcd34d" stroke-width="2" fill="none"/>
+                            <path d="M80,100 C85,95 95,105 100,100 C105,95 115,105 120,100" stroke="#fcd34d" stroke-width="2" fill="none"/>
+                            <path d="M80,105 C85,100 95,110 100,105 C105,100 115,110 120,105" stroke="#fcd34d" stroke-width="2" fill="none"/>
+                            <!-- Steam -->
+                            <path d="M90,80 C85,70 95,65 90,55" stroke="#e5e7eb" stroke-width="2" fill="none"/>
+                            <path d="M100,80 C95,70 105,65 100,55" stroke="#e5e7eb" stroke-width="2" fill="none"/>
+                            <path d="M110,80 C105,70 115,65 110,55" stroke="#e5e7eb" stroke-width="2" fill="none"/>
+                        </svg>
+                    `
+                },
+                {
+                    id: 3,
+                    title: "Membuat Kopi",
+                    color: "yellow",
+                    steps: [
+                        { text: "Siapkan gelas bersih", icon: "🥤" },
+                        { text: "Masukkan kopi bubuk ke dalam gelas", icon: "☕" },
+                        { text: "Tambahkan gula sesuai selera", icon: "🧂" },
+                        { text: "Tuang air panas ke dalam gelas", icon: "♨️" },
+                        { text: "Aduk hingga larut", icon: "🥄" },
+                        { text: "Sajikan kopi", icon: "🍵" }
+                    ],
+                    hint: "Pertama siapkan wadah dan bahan, lalu tambahkan cairan, aduk, dan terakhir sajikan.",
+                    illustration: `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-full">
+                            <rect width="200" height="200" fill="#f0f9ff" rx="10" ry="10"/>
+                            <!-- Cup -->
+                            <path d="M70,70 L70,130 C70,140 130,140 130,130 L130,70 Z" fill="#f9fafb"/>
+                            <path d="M70,70 L130,70 C130,60 70,60 70,70 Z" fill="#e5e7eb"/>
+                            <!-- Coffee -->
+                            <path d="M75,80 L75,125 C75,133 125,133 125,125 L125,80 Z" fill="#7c2d12"/>
+                            <!-- Steam -->
+                            <path d="M90,60 C85,50 95,45 90,35" stroke="#e5e7eb" stroke-width="2" fill="none"/>
+                            <path d="M100,60 C95,50 105,45 100,35" stroke="#e5e7eb" stroke-width="2" fill="none"/>
+                            <path d="M110,60 C105,50 115,45 110,35" stroke="#e5e7eb" stroke-width="2" fill="none"/>
+                            <!-- Handle -->
+                            <path d="M130,80 C150,80 150,120 130,120" stroke="#e5e7eb" stroke-width="5" fill="none"/>
+                            <!-- Spoon -->
+                            <rect x="125" y="90" width="30" height="5" fill="#9ca3af" rx="2" ry="2"/>
+                            <circle cx="155" cy="92.5" r="7" fill="#9ca3af"/>
+                        </svg>
+                    `
+                },
+                {
+                    id: 4,
+                    title: "Berangkat Sekolah",
+                    color: "purple",
+                    steps: [
+                        { text: "Bangun dari tempat tidur", icon: "🛏️" },
+                        { text: "Mandi dan gosok gigi", icon: "🚿" },
+                        { text: "Pakai seragam sekolah", icon: "👕" },
+                        { text: "Sarapan pagi", icon: "🍳" },
+                        { text: "Periksa isi tas sekolah", icon: "🎒" },
+                        { text: "Berangkat ke sekolah", icon: "🚶" }
+                    ],
+                    hint: "Pikirkan rutinitas pagi: bangun, bersihkan diri, berpakaian, makan, persiapkan barang, lalu berangkat.",
+                    illustration: `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-full">
+                            <rect width="200" height="200" fill="#f0f9ff" rx="10" ry="10"/>
+                            <!-- School building -->
+                            <rect x="50" y="60" width="100" height="80" fill="#e5e7eb"/>
+                            <rect x="90" y="120" width="20" height="20" fill="#9ca3af"/>
+                            <!-- Roof -->
+                            <polygon points="50,60 100,30 150,60" fill="#6b7280"/>
+                            <!-- Windows -->
+                            <rect x="65" y="70" width="15" height="15" fill="#60a5fa"/>
+                            <rect x="65" y="95" width="15" height="15" fill="#60a5fa"/>
+                            <rect x="120" y="70" width="15" height="15" fill="#60a5fa"/>
+                            <rect x="120" y="95" width="15" height="15" fill="#60a5fa"/>
+                            <!-- Flag -->
+                            <rect x="140" y="40" width="2" height="40" fill="#4b5563"/>
+                            <polygon points="142,40 142,50 152,45" fill="#ef4444"/>
+                            <!-- Student -->
+                            <circle cx="40" cy="130" r="10" fill="#fcd34d"/>
+                            <rect x="35" y="140" width="10" height="20" fill="#3b82f6"/>
+                            <rect x="30" y="150" width="5" height="15" fill="#4b5563"/>
+                            <rect x="45" y="150" width="5" height="15" fill="#4b5563"/>
+                            <!-- Backpack -->
+                            <rect x="25" y="145" width="10" height="15" fill="#7c3aed" rx="2" ry="2"/>
+                        </svg>
+                    `
+                },
+                {
+                    id: 5,
+                    title: "Menyalakan Komputer",
+                    color: "red",
+                    steps: [
+                        { text: "Tekan tombol power pada CPU", icon: "🖥️" },
+                        { text: "Tekan tombol power pada monitor", icon: "📺" },
+                        { text: "Tunggu hingga muncul layar login", icon: "⏱️" },
+                        { text: "Masukkan username dan password", icon: "🔑" },
+                        { text: "Klik ikon aplikasi (misalnya Word atau Chrome)", icon: "🖱️" },
+                        { text: "Tunggu aplikasi terbuka dan siap digunakan", icon: "✅" }
+                    ],
+                    hint: "Urutan menyalakan komputer: nyalakan perangkat keras, tunggu sistem operasi, login, lalu buka aplikasi.",
+                    illustration: `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-full">
+                            <rect width="200" height="200" fill="#f0f9ff" rx="10" ry="10"/>
+                            <!-- Monitor -->
+                            <rect x="60" y="40" width="80" height="60" fill="#1f2937"/>
+                            <rect x="65" y="45" width="70" height="50" fill="#60a5fa"/>
+                            <!-- Monitor stand -->
+                            <rect x="95" y="100" width="10" height="10" fill="#4b5563"/>
+                            <rect x="85" y="110" width="30" height="5" fill="#4b5563"/>
+                            <!-- CPU -->
+                            <rect x="130" y="70" width="30" height="60" fill="#4b5563"/>
+                            <circle cx="145" cy="80" r="3" fill="#10b981"/>
+                            <rect x="135" y="90" width="20" height="2" fill="#e5e7eb"/>
+                            <rect x="135" y="95" width="20" height="2" fill="#e5e7eb"/>
+                            <!-- Keyboard -->
+                            <rect x="70" y="120" width="60" height="20" fill="#6b7280" rx="2" ry="2"/>
+                            <rect x="75" y="125" width="50" height="10" fill="#4b5563" rx="1" ry="1"/>
+                            <!-- Mouse -->
+                            <rect x="140" y="120" width="10" height="20" fill="#6b7280" rx="5" ry="5"/>
+                            <!-- Icons on screen -->
+                            <rect x="75" y="55" width="10" height="10" fill="#fcd34d" rx="2" ry="2"/>
+                            <rect x="90" y="55" width="10" height="10" fill="#ef4444" rx="2" ry="2"/>
+                            <rect x="105" y="55" width="10" height="10" fill="#10b981" rx="2" ry="2"/>
+                            <rect x="75" y="70" width="10" height="10" fill="#3b82f6" rx="2" ry="2"/>
+                        </svg>
+                    `
+                }
+            ];
+            
+            let currentLevel = null;
+            let draggedItem = null;
+            let dropZones = [];
+            let completedLevels = [];
+            let ghostElement = null;
+            
+            // DOM elements
+            const splashScreen = document.getElementById('splash-screen');
+            const levelSelection = document.getElementById('level-selection');
+            const gameScreen = document.getElementById('game-screen');
+            const resultModal = document.getElementById('result-modal');
+            const successResult = document.getElementById('success-result');
+            const failureResult = document.getElementById('failure-result');
+            const hintButton = document.getElementById('hint-button');
+            const hintText = document.getElementById('hint-text');
+            
+            // Buttons
+            const startButton = document.getElementById('start-button');
+            const backToLevelsBtn = document.getElementById('back-to-levels');
+            const checkButton = document.getElementById('check-button');
+            const tryAgainButton = document.getElementById('try-again-button');
+            const nextLevelButton = document.getElementById('next-level-button');
+            const backToLevelsButton = document.getElementById('back-to-levels-button');
+            
+            // Level cards
+            const levelCards = document.querySelectorAll('.level-card');
+            
+            // Event listeners
+            startButton.addEventListener('click', () => {
+                loadLevel(1); // Always start with level 1
+            });
+            
+            backToLevelsBtn.addEventListener('click', showLevelSelection);
+            checkButton.addEventListener('click', checkAnswer);
+            tryAgainButton.addEventListener('click', hideResultModal);
+            nextLevelButton.addEventListener('click', goToNextLevel);
+            backToLevelsButton.addEventListener('click', () => {
+                hideResultModal();
+                showLevelSelection();
+            });
+            
+            hintButton.addEventListener('click', toggleHint);
+            
+            levelCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const levelId = parseInt(card.dataset.level);
+                    if (!card.classList.contains('level-locked')) {
+                        loadLevel(levelId);
+                    } else {
+                        showLevelLockedMessage(levelId);
+                    }
+                });
+            });
+            
+            // Functions
+            function showSplashScreen() {
+                splashScreen.classList.remove('hidden');
+                levelSelection.classList.add('hidden');
+                gameScreen.classList.add('hidden');
+            }
+            
+            function showLevelSelection() {
+                updateLevelCards();
+                splashScreen.classList.add('hidden');
+                levelSelection.classList.remove('hidden');
+                gameScreen.classList.add('hidden');
+            }
+            
+            function showGameScreen() {
+                splashScreen.classList.add('hidden');
+                levelSelection.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+            }
+            
+            function updateLevelCards() {
+                levelCards.forEach(card => {
+                    const levelId = parseInt(card.dataset.level);
+                    
+                    // Reset classes
+                    card.classList.remove('level-locked', 'level-completed');
+                    card.classList.add('cursor-pointer', 'hover:shadow-xl');
+                    
+                    // Mark completed levels
+                    if (completedLevels.includes(levelId)) {
+                        card.classList.add('level-completed');
+                    }
+                    
+                    // Lock levels that are not yet available
+                    if (levelId > 1 && !completedLevels.includes(levelId - 1)) {
+                        card.classList.add('level-locked');
+                        card.classList.remove('cursor-pointer', 'hover:shadow-xl');
+                    }
+                });
+            }
+            
+            function showLevelLockedMessage(levelId) {
+                alert(`Level ${levelId} masih terkunci. Selesaikan level sebelumnya terlebih dahulu.`);
+            }
+            
+            function loadLevel(levelId) {
+                currentLevel = levels.find(level => level.id === levelId);
+                
+                if (!currentLevel) return;
+                
+                // Hide hint text when loading a new level
+                hintText.classList.add('hidden');
+                
+                // Update level indicator and title
+                document.getElementById('level-indicator').textContent = `Level ${currentLevel.id}`;
+                document.getElementById('level-indicator').className = `level-indicator px-4 py-1 bg-${currentLevel.color}-100 text-${currentLevel.color}-800 font-bold rounded-full`;
+                document.getElementById('level-title').textContent = currentLevel.title;
+                
+                // Set illustration
+                document.getElementById('level-illustration').innerHTML = currentLevel.illustration;
+                
+                // Set hint text
+                hintText.textContent = currentLevel.hint;
+                
+                // Shuffle steps
+                const shuffledSteps = [...currentLevel.steps].sort(() => Math.random() - 0.5);
+                
+                // Create draggable steps
+                const stepsContainer = document.getElementById('steps-container');
+                stepsContainer.innerHTML = '';
+                
+                shuffledSteps.forEach((step, index) => {
+                    const stepElement = document.createElement('div');
+                    stepElement.className = `step-item draggable bg-white border-2 border-gray-200 rounded-lg p-3 flex items-center cursor-grab`;
+                    stepElement.setAttribute('draggable', 'true');
+                    stepElement.dataset.index = index;
+                    stepElement.dataset.text = step.text;
+                    
+                    stepElement.innerHTML = `
+                        <div class="w-10 h-10 bg-${currentLevel.color}-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                            <span class="text-xl">${step.icon}</span>
+                        </div>
+                        <span class="text-gray-800">${step.text}</span>
+                    `;
+                    
+                    stepElement.addEventListener('dragstart', dragStart);
+                    stepElement.addEventListener('dragend', dragEnd);
+                    stepElement.addEventListener('touchstart', touchStart, { passive: false });
+                    stepElement.addEventListener('touchmove', touchMove, { passive: false });
+                    stepElement.addEventListener('touchend', touchEnd);
+                    
+                    stepsContainer.appendChild(stepElement);
+                });
+                
+                // Create drop zones
+                const dropContainer = document.getElementById('drop-container');
+                dropContainer.innerHTML = '';
+                dropZones = [];
+                
+                for (let i = 0; i < currentLevel.steps.length; i++) {
+                    const dropZone = document.createElement('div');
+                    dropZone.className = `drop-zone border-2 border-dashed border-gray-300 rounded-lg p-3 h-16 flex items-center justify-center`;
+                    dropZone.dataset.position = i;
+                    dropZone.innerHTML = `<span class="text-gray-400">${i + 1}</span>`;
+                    
+                    dropZone.addEventListener('dragover', dragOver);
+                    dropZone.addEventListener('dragenter', dragEnter);
+                    dropZone.addEventListener('dragleave', dragLeave);
+                    dropZone.addEventListener('drop', drop);
+                    
+                    dropContainer.appendChild(dropZone);
+                    dropZones.push(dropZone);
+                }
+                
+                showGameScreen();
+            }
+            
+            // Drag and drop functions
+            function dragStart(e) {
+                draggedItem = this;
+                
+                // If this item is already in a drop zone, store its original position
+                if (this.parentNode.classList.contains('drop-zone')) {
+                    this.dataset.fromDropZone = this.parentNode.dataset.position;
+                }
+                
+                setTimeout(() => this.classList.add('dragging'), 0);
+                
+                // Create a clone for the drag image
+                const rect = this.getBoundingClientRect();
+                const clone = this.cloneNode(true);
+                clone.style.width = rect.width + 'px';
+                clone.style.height = rect.height + 'px';
+                clone.style.opacity = '0';
+                document.body.appendChild(clone);
+                
+                // Set the drag image to the clone
+                if (e.dataTransfer) {
+                    e.dataTransfer.setDragImage(clone, 0, 0);
+                }
+                
+                // Remove the clone after a short delay
+                setTimeout(() => {
+                    document.body.removeChild(clone);
+                }, 0);
+            }
+            
+            function dragEnd() {
+                this.classList.remove('dragging');
+                
+                // If the item was dragged from a drop zone but not dropped in another one,
+                // return it to its original position
+                if (this.dataset.fromDropZone && this.parentNode.id === 'steps-container') {
+                    const originalDropZone = dropZones[parseInt(this.dataset.fromDropZone)];
+                    if (originalDropZone && !originalDropZone.querySelector('.step-item')) {
+                        originalDropZone.appendChild(this);
+                    }
+                }
+                
+                // Clear the fromDropZone data
+                delete this.dataset.fromDropZone;
+            }
+            
+            function dragOver(e) {
+                e.preventDefault();
+            }
+            
+            function dragEnter(e) {
+                e.preventDefault();
+                this.classList.add('highlight');
+            }
+            
+            function dragLeave() {
+                this.classList.remove('highlight');
+            }
+            
+            function drop() {
+                this.classList.remove('highlight');
+                
+                // Get the current item in this drop zone, if any
+                const currentItem = this.querySelector('.step-item');
+                
+                // If the dragged item is from another drop zone
+                if (draggedItem.parentNode.classList.contains('drop-zone')) {
+                    // Remove it from its current drop zone
+                    draggedItem.parentNode.innerHTML = `<span class="text-gray-400">${parseInt(draggedItem.parentNode.dataset.position) + 1}</span>`;
+                }
+                
+                // If there's already an item in this drop zone
+                if (currentItem) {
+                    // If the dragged item is from another drop zone
+                    if (draggedItem.dataset.fromDropZone) {
+                        // Move the current item to the dragged item's original drop zone
+                        const originalDropZone = dropZones[parseInt(draggedItem.dataset.fromDropZone)];
+                        if (originalDropZone) {
+                            originalDropZone.innerHTML = '';
+                            originalDropZone.appendChild(currentItem);
+                        }
+                    } else {
+                        // If the dragged item is from the steps container, move the current item back to steps
+                        const stepsContainer = document.getElementById('steps-container');
+                        stepsContainer.appendChild(currentItem);
+                    }
+                }
+                
+                // Clear the drop zone and add the dragged item
+                this.innerHTML = '';
+                this.appendChild(draggedItem);
+                
+                // Add click event to remove the item
+                draggedItem.addEventListener('click', function() {
+                    if (this.parentNode.classList.contains('drop-zone')) {
+                        // Move the item back to steps container
+                        const stepsContainer = document.getElementById('steps-container');
+                        stepsContainer.appendChild(this);
+                        
+                        // Reset drop zone
+                        const position = parseInt(this.parentNode.dataset.position);
+                        const dropZone = dropZones[position];
+                        dropZone.innerHTML = `<span class="text-gray-400">${position + 1}</span>`;
+                    }
+                });
+            }
+            
+            // Touch functions for mobile
+            function touchStart(e) {
+                if (e.target.closest('.step-item')) {
+                    e.preventDefault();
+                    draggedItem = e.target.closest('.step-item');
+                    
+                    // If this item is already in a drop zone, store its original position
+                    if (draggedItem.parentNode.classList.contains('drop-zone')) {
+                        draggedItem.dataset.fromDropZone = draggedItem.parentNode.dataset.position;
+                    }
+                    
+                    draggedItem.classList.add('dragging');
+                    
+                    // Store the initial touch position
+                    const touch = e.touches[0];
+                    const rect = draggedItem.getBoundingClientRect();
+                    
+                    // Create a ghost element for visual feedback
+                    ghostElement = draggedItem.cloneNode(true);
+                    ghostElement.classList.add('ghost-element');
+                    ghostElement.style.width = `${rect.width}px`;
+                    ghostElement.style.left = `${touch.clientX}px`;
+                    ghostElement.style.top = `${touch.clientY}px`;
+                    document.body.appendChild(ghostElement);
+                    
+                    // Store offset for smooth dragging
+                    draggedItem.offsetX = touch.clientX - rect.left;
+                    draggedItem.offsetY = touch.clientY - rect.top;
+                }
+            }
+            
+            function touchMove(e) {
+                if (draggedItem && ghostElement) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    
+                    // Move the ghost element
+                    ghostElement.style.left = `${touch.clientX}px`;
+                    ghostElement.style.top = `${touch.clientY}px`;
+                    
+                    // Find the drop zone under the touch point
+                    const elementsUnderTouch = document.elementsFromPoint(touch.clientX, touch.clientY);
+                    const dropZoneUnder = elementsUnderTouch.find(el => el.classList.contains('drop-zone'));
+                    
+                    // Highlight the drop zone under touch
+                    dropZones.forEach(zone => zone.classList.remove('highlight'));
+                    if (dropZoneUnder) {
+                        dropZoneUnder.classList.add('highlight');
+                    }
+                }
+            }
+            
+            function touchEnd(e) {
+                if (draggedItem && ghostElement) {
+                    // Remove the ghost element
+                    ghostElement.remove();
+                    ghostElement = null;
+                    
+                    // Find the drop zone under the last touch point
+                    const touch = e.changedTouches[0];
+                    const elementsUnderTouch = document.elementsFromPoint(touch.clientX, touch.clientY);
+                    const dropZoneUnder = elementsUnderTouch.find(el => el.classList.contains('drop-zone'));
+                    
+                    if (dropZoneUnder) {
+                        // Get the current item in this drop zone, if any
+                        const currentItem = dropZoneUnder.querySelector('.step-item');
+                        
+                        // If the dragged item is from another drop zone
+                        if (draggedItem.parentNode.classList.contains('drop-zone')) {
+                            // Remove it from its current drop zone
+                            draggedItem.parentNode.innerHTML = `<span class="text-gray-400">${parseInt(draggedItem.parentNode.dataset.position) + 1}</span>`;
+                        }
+                        
+                        // If there's already an item in this drop zone
+                        if (currentItem) {
+                            // If the dragged item is from another drop zone
+                            if (draggedItem.dataset.fromDropZone) {
+                                // Move the current item to the dragged item's original drop zone
+                                const originalDropZone = dropZones[parseInt(draggedItem.dataset.fromDropZone)];
+                                if (originalDropZone) {
+                                    originalDropZone.innerHTML = '';
+                                    originalDropZone.appendChild(currentItem);
+                                }
+                            } else {
+                                // If the dragged item is from the steps container, move the current item back to steps
+                                const stepsContainer = document.getElementById('steps-container');
+                                stepsContainer.appendChild(currentItem);
+                            }
+                        }
+                        
+                        // Clear the drop zone and add the dragged item
+                        dropZoneUnder.innerHTML = '';
+                        dropZoneUnder.appendChild(draggedItem);
+                        
+                        // Add click event to remove the item
+                        draggedItem.addEventListener('click', function() {
+                            if (this.parentNode.classList.contains('drop-zone')) {
+                                // Move the item back to steps container
+                                const stepsContainer = document.getElementById('steps-container');
+                                stepsContainer.appendChild(this);
+                                
+                                // Reset drop zone
+                                const position = parseInt(this.parentNode.dataset.position);
+                                const dropZone = dropZones[position];
+                                dropZone.innerHTML = `<span class="text-gray-400">${position + 1}</span>`;
+                            }
+                        });
+                    } else {
+                        // If not dropped on a drop zone and was from a drop zone, return to original position
+                        if (draggedItem.dataset.fromDropZone) {
+                            const originalDropZone = dropZones[parseInt(draggedItem.dataset.fromDropZone)];
+                            if (originalDropZone && !originalDropZone.querySelector('.step-item')) {
+                                originalDropZone.innerHTML = '';
+                                originalDropZone.appendChild(draggedItem);
+                            }
+                        }
+                    }
+                    
+                    // Reset
+                    draggedItem.classList.remove('dragging');
+                    dropZones.forEach(zone => zone.classList.remove('highlight'));
+                    delete draggedItem.dataset.fromDropZone;
+                    draggedItem = null;
+                }
+            }
+            
+            function toggleHint() {
+                if (hintText.classList.contains('hidden')) {
+                    hintText.classList.remove('hidden');
+                    hintText.classList.add('fade-in');
+                } else {
+                    hintText.classList.add('hidden');
+                }
+            }
+            
+            function checkAnswer() {
+                let allCorrect = true;
+                let allFilled = true;
+                
+                // Check if all drop zones are filled
+                for (let i = 0; i < dropZones.length; i++) {
+                    const stepItem = dropZones[i].querySelector('.step-item');
+                    if (!stepItem) {
+                        allFilled = false;
+                        break;
+                    }
+                }
+                
+                if (!allFilled) {
+                    alert('Silakan lengkapi semua langkah terlebih dahulu!');
+                    return;
+                }
+                
+                // Check if steps are in correct order
+                for (let i = 0; i < currentLevel.steps.length; i++) {
+                    const stepItem = dropZones[i].querySelector('.step-item');
+                    const correctText = currentLevel.steps[i].text;
+                    const userText = stepItem.dataset.text;
+                    
+                    if (correctText === userText) {
+                        stepItem.classList.add('correct');
+                        stepItem.classList.remove('incorrect');
+                    } else {
+                        stepItem.classList.add('incorrect');
+                        stepItem.classList.remove('correct');
+                        allCorrect = false;
+                    }
+                }
+                
+                // Show result modal
+                if (allCorrect) {
+                    // Add to completed levels if not already completed
+                    if (!completedLevels.includes(currentLevel.id)) {
+                        completedLevels.push(currentLevel.id);
+                    }
+                    showSuccessResult();
+                    createConfetti();
+                } else {
+                    showFailureResult();
+                }
+            }
+            
+            function showSuccessResult() {
+                resultModal.classList.remove('hidden');
+                successResult.classList.remove('hidden');
+                failureResult.classList.add('hidden');
+                
+                // Show next level button only if there's a next level
+                if (currentLevel.id < levels.length) {
+                    nextLevelButton.classList.remove('hidden');
+                    backToLevelsButton.classList.add('hidden');
+                } else {
+                    nextLevelButton.classList.add('hidden');
+                    backToLevelsButton.classList.remove('hidden');
+                }
+                
+                tryAgainButton.classList.add('hidden');
+            }
+            
+            function showFailureResult() {
+                resultModal.classList.remove('hidden');
+                successResult.classList.add('hidden');
+                failureResult.classList.remove('hidden');
+                nextLevelButton.classList.add('hidden');
+                backToLevelsButton.classList.add('hidden');
+                tryAgainButton.classList.remove('hidden');
+            }
+            
+            function hideResultModal() {
+                resultModal.classList.add('hidden');
+            }
+            
+            function goToNextLevel() {
+                hideResultModal();
+                if (currentLevel.id < levels.length) {
+                    loadLevel(currentLevel.id + 1);
+                } else {
+                    showLevelSelection();
+                }
+            }
+            
+            function createConfetti() {
+                const confettiContainer = document.createElement('div');
+                confettiContainer.style.position = 'fixed';
+                confettiContainer.style.top = '0';
+                confettiContainer.style.left = '0';
+                confettiContainer.style.width = '100%';
+                confettiContainer.style.height = '100%';
+                confettiContainer.style.pointerEvents = 'none';
+                confettiContainer.style.zIndex = '1000';
+                document.body.appendChild(confettiContainer);
+                
+                const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
+                
+                for (let i = 0; i < 100; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = `${Math.random() * 100}%`;
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.width = `${Math.random() * 10 + 5}px`;
+                    confetti.style.height = `${Math.random() * 10 + 5}px`;
+                    confetti.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                    confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+                    confettiContainer.appendChild(confetti);
+                }
+                
+                setTimeout(() => {
+                    confettiContainer.remove();
+                }, 5000);
+            }
+            
+            // Start the game
+            showSplashScreen();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'965aebcb03f54ad6',t:'MTc1MzYwNjU2MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
